@@ -18,7 +18,7 @@ class _DateSelectorState extends State<DateSelector> {
   @override
   Widget build(BuildContext context) {
     final weekDays = generateWeekDates(weekOffset);
-    String monthName = DateFormat("MMMM").format(weekDays.first);
+    String monthName = DateFormat("MMMM").format(weekDays[3]);
     return Column(
       children: [
         Padding(
@@ -31,12 +31,46 @@ class _DateSelectorState extends State<DateSelector> {
                     setState(() {
                       weekOffset--;
                     });
-                    setState(() {
-                      weekOffset--;
-                    });
                   },
                   icon: Icon(CupertinoIcons.arrow_left)),
-              Text(monthName),
+              GestureDetector(
+                onTap: () async {
+                  final selectedDate = await showDatePicker(
+                      context: context,
+                      firstDate: DateTime(1960),
+                      lastDate: DateTime.now().add(Duration(days: 365)),
+                      currentDate: widget.selectedDate,
+                      builder: (context, child) {
+                        return Theme(
+                            data: ThemeData(
+                              colorScheme: ColorScheme.dark(
+                                brightness:
+                                    MediaQuery.platformBrightnessOf(context),
+                                primary: Colors.orange,
+                                onPrimary: Colors.white,
+                              ),
+                            ),
+                            child: child!);
+                      });
+                  if (selectedDate != null) {
+                    widget.onDateChange(selectedDate);
+                    setState(() {
+                      // get the first week of today
+                      final moveValue = ((selectedDate.millisecondsSinceEpoch -
+                              DateTime.now().millisecondsSinceEpoch) /
+                          (1000 * 3600 * 24 * 7));
+                      if (moveValue < 0 ||
+                          (moveValue >= 0 &&
+                              selectedDate.weekday <= DateTime.now().weekday)) {
+                        weekOffset = moveValue.ceil();
+                      } else {
+                        weekOffset = moveValue.floor();
+                      }
+                    });
+                  }
+                },
+                child: Text(monthName),
+              ),
               IconButton(
                   onPressed: () {
                     setState(() {
